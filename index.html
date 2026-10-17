@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Split Stack — International DJs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Playfair+Display+SC:wght@700&family=DM+Mono:wght@400;500&family=Oswald:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #CC0000;
+      --blue: #003399;
+      --white: #F5F5F0;
+      --black: #080808;
+      --dark: #0f0f0f;
+      --mid: #1a1a1a;
+      --border: #2a2a2a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--white);
+      font-family: 'DM Mono', monospace;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.35;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      background: var(--black);
+      border-bottom: 3px solid var(--red);
+      padding: 18px 40px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    /* RAF Roundel SVG */
+    .roundel {
+      flex-shrink: 0;
+      width: 72px;
+      height: 72px;
+      filter: drop-shadow(0 0 8px rgba(204,0,0,0.4));
+    }
+
+    .dj-name {
+      font-family: 'Playfair Display SC', serif;
+      font-weight: 700;
+      font-size: clamp(1.6rem, 4vw, 2.8rem);
+      letter-spacing: 0.06em;
+      color: var(--white);
+      white-space: nowrap;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dj-name span { color: var(--white); vertical-align: baseline; }
+
+
+    .tagline-header {
+      margin-left: auto;
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #555;
+      text-align: right;
+      line-height: 1.8;
+    }
+
+    /* ─── TRICOLOUR STRIPES ─── */
+    .stripe-red   { height: 6px; background: var(--red); }
+    .stripe-white { height: 6px; background: var(--white); }
+    .stripe-blue  { height: 6px; background: var(--blue); }
+
+    /* ─── HERO ─── */
+    .hero {
+      position: relative;
+      min-height: 70vh;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+      background: var(--dark);
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 60% 40%, rgba(204,0,0,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 20% 80%, rgba(0,51,153,0.1) 0%, transparent 55%),
+        var(--dark);
+    }
+
+    /* Photo placeholder — replace src with actual photo */
+    .hero-photo {
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      width: 55%;
+      object-fit: cover;
+      object-position: top center;
+      opacity: 0.55;
+      mix-blend-mode: luminosity;
+      mask-image: linear-gradient(to left, rgba(0,0,0,0.9) 40%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.9) 40%, transparent 100%);
+    }
+
+    /* Two photo placeholders, smaller, side by side */
+    .hero-photo-group {
+      position: absolute;
+      right: 40px;
+      top: 44%;
+      transform: translateY(-50%);
+      display: flex;
+      gap: 20px;
+      width: 32%;
+    }
+
+    .hero-photo-placeholder {
+      position: relative;
+      flex: 1 1 0;
+      min-width: 0;
+      aspect-ratio: 3/4;
+      border: 2px solid var(--border);
+      box-shadow: 0 0 0 6px var(--dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #333;
+      font-size: 0.55rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: #111;
+      text-align: center;
+      padding: 6px;
+    }
+
+    .hero-photo-placeholder svg { opacity: 0.3; width: 26px; height: 26px; }
+
+    .hero-photo-placeholder img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-fallback {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 60px 40px;
+      max-width: 560px;
+    }
+
+    .hero-kicker {
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .hero-kicker::after {
+      content: '';
+      display: block;
+      height: 1px;
+      width: 60px;
+      background: var(--red);
+      opacity: 0.5;
+    }
+
+    .hero-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 900;
+      line-height: 1.0;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-headline em {
+      font-style: italic;
+      color: var(--red);
+    }
+
+    .hero-sub {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #888;
+      line-height: 2;
+      border-left: 2px solid var(--blue);
+      padding-left: 16px;
+    }
+
+    /* Below this width, the fixed-width text column and the
+       percentage-width photo group start to collide — stack instead */
+    @media (max-width: 960px) {
+      .hero {
+        flex-direction: column;
+        align-items: stretch;
+        padding-top: 40px;
+      }
+      .hero-photo-group {
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
+        width: 70%;
+        max-width: 320px;
+        margin: 0 auto 24px;
+      }
+      .hero-content { max-width: 100%; }
+    }
+
+    /* ─── SECTION COMMON ─── */
+    section {
+      padding: 80px 40px;
+    }
+
+    .section-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 1px;
+      background: var(--red);
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 900;
+      margin-bottom: 40px;
+      letter-spacing: -0.01em;
+    }
+
+    /* ─── DIVIDER ─── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border), transparent);
+      margin: 0 40px;
+      width: calc(100% - 80px);
+    }
+
+    /* ─── YOUTUBE SECTION ─── */
+    .youtube-section {
+      background: var(--dark);
+      text-align: center;
+    }
+
+    .youtube-section .section-label,
+    .youtube-section .section-title {
+      text-align: left;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .youtube-section .section-label { justify-content: flex-start; }
+
+    .player-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .player-border {
+      border: 2px solid var(--red);
+      padding: 6px;
+      background: #000;
+      box-shadow:
+        0 0 0 1px #1a1a1a,
+        0 0 40px rgba(204,0,0,0.15),
+        inset 0 0 20px rgba(0,0,0,0.8);
+    }
+
+    .player-border iframe {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16/9;
+      border: none;
+    }
+
+    .player-caption {
+      margin-top: 16px;
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      color: #444;
+      text-transform: uppercase;
+    }
+
+    .yt-link-btn {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 12px 32px;
+      border: 1px solid var(--red);
+      color: var(--red);
+      text-decoration: none;
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+    }
+
+    .yt-link-btn:hover {
+      background: var(--red);
+      color: var(--white);
+    }
+
+    /* ─── BIO SECTION ─── */
+    .bio-section {
+      background: var(--black);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: start;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 760px) {
+      .bio-section { grid-template-columns: 1fr; }
+    }
+
+    .bio-text {
+      border-left: 3px solid var(--red);
+      padding-left: 28px;
+    }
+
+    .bio-text p {
+      font-size: 0.85rem;
+      line-height: 2;
+      color: #aaa;
+      margin-bottom: 1.4em;
+    }
+
+    .bio-text p:last-child { margin-bottom: 0; }
+
+    .bio-text .placeholder-text {
+      color: #444;
+      font-style: italic;
+    }
+
+    .bio-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .stat-item {
+      border: 1px solid var(--border);
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: border-color 0.2s;
+    }
+
+    .stat-item:hover { border-color: var(--blue); }
+
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--white);
+    }
+
+    .stat-num span { color: var(--red); }
+
+    .stat-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    /* ─── QR + INFO SECTION ─── */
+    .info-section {
+      background: var(--mid);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    @media (max-width: 760px) {
+      .info-grid { grid-template-columns: 1fr; }
+    }
+
+    .qr-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .qr-frame {
+      width: 180px;
+      height: 180px;
+      border: 2px solid var(--white);
+      outline: 4px solid var(--red);
+      outline-offset: 4px;
+      background: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* QR code placeholder pattern */
+    .qr-inner {
+      width: 140px;
+      height: 140px;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 9px, #000 9px, #000 10px),
+        repeating-linear-gradient(90deg, transparent, transparent 9px, #000 9px, #000 10px);
+      opacity: 0.15;
+    }
+
+    .qr-placeholder-text {
+      position: absolute;
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #222;
+      text-align: center;
+      padding: 8px;
+      line-height: 1.6;
+    }
+
+    .qr-caption {
+      font-size: 0.58rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #666;
+      text-align: center;
+    }
+
+    .info-details { }
+
+    .info-details h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      margin-bottom: 16px;
+    }
+
+    .info-details p {
+      font-size: 0.78rem;
+      line-height: 2;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    .info-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .info-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border: 1px solid var(--border);
+      color: var(--white);
+      text-decoration: none;
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .info-link:hover { border-color: var(--blue); color: var(--blue); }
+    .info-link.primary { border-color: var(--red); color: var(--red); }
+    .info-link.primary:hover { background: var(--red); color: var(--white); }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--black);
+      padding: 36px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+      border-top: 1px solid #1a1a1a;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .roundel-sm {
+      width: 32px;
+      height: 32px;
+      opacity: 0.5;
+    }
+
+    .footer-copy {
+      font-size: 0.58rem;
+      letter-spacing: 0.15em;
+      color: #444;
+      text-transform: uppercase;
+    }
+
+    .footer-right {
+      font-size: 0.58rem;
+      letter-spacing: 0.15em;
+      color: #333;
+      text-transform: uppercase;
+    }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-kicker  { animation: fadeUp 0.7s ease both; }
+    .hero-headline{ animation: fadeUp 0.7s ease 0.15s both; }
+    .hero-sub     { animation: fadeUp 0.7s ease 0.3s both; }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--black); }
+    ::-webkit-scrollbar-thumb { background: var(--red); }
+
+    /* ─── SECTION WRAPPER ─── */
+    .section-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ─── GENRE TAGS ─── */
+    .genre-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 40px;
+      justify-content: center;
+    }
+
+    .tag {
+      font-size: 0.58rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      color: #666;
+    }
+
+    .tag.red   { border-color: var(--red);  color: var(--red); }
+    .tag.blue  { border-color: var(--blue); color: var(--blue); }
+    .tag.white { border-color: #444;        color: #aaa; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ HEADER ═══ -->
+  <header>
+    <!-- RAF Roundel -->
+    <svg class="roundel" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="RAF Roundel">
+      <!-- Outer red ring -->
+      <circle cx="50" cy="50" r="50" fill="#CC0000"/>
+      <!-- White ring -->
+      <circle cx="50" cy="50" r="38" fill="#F5F5F0"/>
+      <!-- Blue ring -->
+      <circle cx="50" cy="50" r="26" fill="#003399"/>
+      <!-- Red ring -->
+      <circle cx="50" cy="50" r="14" fill="#CC0000"/>
+      <!-- Inner white dot -->
+      <circle cx="50" cy="50" r="5" fill="#F5F5F0"/>
+    </svg>
+
+    <div class="dj-name" aria-label="Split Stack">
+      Split Stack
+    </div>
+
+    <div class="tagline-header">
+      International DJs<br>Since the 00s
+    </div>
+  </header>
+
+  <div class="stripe-red"></div>
+
+  <!-- ═══ HERO ═══ -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+
+    <!-- Photo boxes — put each photo's file name/path in the img src= below.
+         e.g. src="images/joel.jpg" or a full URL like src="https://yoursite.com/joel.jpg"
+         Until a real file is found there, the placeholder graphic shows automatically. -->
+    <div class="hero-photo-group">
+      <div class="hero-photo-placeholder">
+        <img src="images/joel.jpg" alt="Joel"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="photo-fallback">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="3" y="3" width="18" height="18" rx="1"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+          <span>Replace with Joel's photo</span>
+        </div>
+      </div>
+      <div class="hero-photo-placeholder">
+        <img src="images/jen.jpg" alt="Jen"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="photo-fallback">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="3" y="3" width="18" height="18" rx="1"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+          <span>Replace with Jen's photo</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-kicker">International Sound</div>
+      <h1 class="hero-headline">
+        Beats.<br>
+        <em>Raw</em><br>
+        &amp; Real.
+      </h1>
+      <p class="hero-sub">
+        Breakbeat, Progressive and Melodic House, 70s inspired Soul Grooves<br>
+        Early evening toe-tappers through to late night bangers
+      </p>
+    </div>
+  </section>
+
+  <div class="stripe-white"></div>
+
+  <!-- ═══ YOUTUBE ═══ -->
+  <section class="youtube-section">
+    <div class="section-inner">
+      <div class="section-label">Watch &amp; Listen</div>
+      <h2 class="section-title" style="text-align:left;">On The Decks</h2>
+
+      <div class="player-wrap">
+        <div class="player-border">
+          <!-- Replace the src with your actual YouTube channel or video URL -->
+          <!-- To embed a channel: use https://www.youtube.com/embed/videoseries?list=YOUR_PLAYLIST_ID -->
+          <!-- To embed a video: use https://www.youtube.com/embed/YOUR_VIDEO_ID -->
+          <iframe
+            src="https://www.youtube.com/embed/videoseries?list=PLbZIPy20-1pNynCM-8TL4Pv21TFNJ6G4Q"
+            title="Split Stack — YouTube Channel"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <p class="player-caption">Original dance tracks and videos on their way — they are in the production stage. Creativity is messy and slow.</p>
+        <br>
+        <!-- Replace # with your actual YouTube channel URL -->
+        <a class="yt-link-btn" href="https://www.youtube.com/@The4FourDJs" target="_blank" rel="noopener">
+          ▶ &nbsp; Visit the YouTube Channel
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══ BIO ═══ -->
+  <section style="padding: 80px 40px; background: var(--black);">
+    <div class="section-inner">
+      <div class="section-label">The DJs</div>
+      <h2 class="section-title">About Split Stack</h2>
+
+      <div class="bio-section" style="max-width:100%; margin:0;">
+
+        <div class="bio-text">
+          <p>
+            Joel has been involved in music since the 80s. After hanging around the clubs and DJs of London and Brighton, England he started DJing himself. He was a regular in the Brighton club scene and was there as dance music culture came of age: "rock 'n' roll dance music" as he calls it.
+          </p>
+          <p>
+            Jen joined him in the 00s. They formed The Deep DJs and played in Cairo and Bangkok introducing dance music to the club scene in both cities. They even turned their Cairo flat into a club for Berth D Party Nights.
+          </p>
+          <p>
+            Joel writes and produces British Rock in his Tashkent studio (Back House Studios) under the name Hazy Summerz. Together with Jen they are known as "Split Stack".
+          </p>
+        </div>
+
+        <div class="bio-stats">
+          <div class="stat-item">
+            <span class="stat-num">20<span>+</span></span>
+            <span class="stat-label">Years Behind the Decks</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num" style="color: var(--red);">06</span>
+            <span class="stat-label">Est. — The Journey Begins</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-num">UK<span style="color:var(--blue);">.</span></span>
+            <span class="stat-label">International · Dance · Soul</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="stripe-blue"></div>
+
+  <!-- ═══ QR + INFO ═══ -->
+  <section class="info-section">
+    <div class="section-inner">
+      <div style="max-width: 700px; margin: 0 auto; text-align: center;">
+
+        <div class="info-details">
+          <div class="section-label" style="justify-content: center; display: flex; align-items: center; gap: 12px;">Connect</div>
+          <h2 class="section-title" style="font-size: 1.8rem; margin-bottom: 16px; text-align: center;">More Information</h2>
+          <p>
+            For information on Split Stack, use the link below.
+          </p>
+          <div class="info-links" style="justify-content: center;">
+            <!-- Replace # with actual link -->
+            <a class="info-link primary" href="#" target="_blank">📸 &nbsp; Instagram</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer>
+    <div class="footer-left">
+      <svg class="roundel-sm" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="50" cy="50" r="50" fill="#CC0000"/>
+        <circle cx="50" cy="50" r="38" fill="#F5F5F0"/>
+        <circle cx="50" cy="50" r="26" fill="#003399"/>
+        <circle cx="50" cy="50" r="14" fill="#CC0000"/>
+        <circle cx="50" cy="50" r="5"  fill="#F5F5F0"/>
+      </svg>
+      <span class="footer-copy">© 2026 Split Stack — All Rights Reserved</span>
+    </div>
+    <div class="footer-right">International DJs · Est. 2006 · UK</div>
+  </footer>
+
+</body>
+</html>
